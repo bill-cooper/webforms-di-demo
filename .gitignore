@@ -1,0 +1,17 @@
+**/bin/**
+**/obj/**
+**/TestResults/**
+**/packages/**
+
+**.suo
+**.user
+**.DotSettings
+
+**.sln.ide/**
+**.vs/**
+
+/src/NJsonSchema.sln.GhostDoc.xml
+
+[Bb]in/
+[Oo]bj/
+/.vs
