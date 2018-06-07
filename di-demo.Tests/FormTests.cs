@@ -7,6 +7,8 @@ using System.Collections.Specialized;
 using di_demo.Data;
 using System.Web.UI.WebControls;
 using System.Web.UI.HtmlControls;
+using di_demo.Services;
+using AngleSharp.Parser.Html;
 
 namespace di_demo.Tests
 {
@@ -17,10 +19,12 @@ namespace di_demo.Tests
         public void DefaultPage_TestPageInitialState()
         {
 
-            var dependancy = new Mock<IPersonRepository>();
+            var personRepo = new Mock<IPersonRepository>();
+            var yearProvider = new Mock<IYearProvider>();
 
             var collection = new ServiceCollection();
-            collection.AddScoped((sp) => { return dependancy.Object; });
+            collection.AddScoped((sp) => { return personRepo.Object; });
+            collection.AddScoped((sp) => { return yearProvider.Object; });
 
             var provider = new Services.ServiceProvider(collection.BuildServiceProvider());
 
@@ -41,7 +45,7 @@ namespace di_demo.Tests
             Assert.IsTrue(txtId.Text == string.Empty, "Expected ID text box to have no value");
 
 
-            dependancy.Verify(x => x.GetPerson(It.IsAny<int>()), Times.Never());
+            personRepo.Verify(x => x.GetPerson(It.IsAny<int>()), Times.Never());
 
 
         }
@@ -58,11 +62,13 @@ namespace di_demo.Tests
                 DateOfBirth = new DateTime(1980, 5, 1)
             };
 
-            var dependancy = new Mock<IPersonRepository>();
-            dependancy.Setup(d => d.GetPerson(It.IsAny<int>())).Returns(mockPerson);
+            var yearProvider = new Mock<IYearProvider>();
+            var personRepo = new Mock<IPersonRepository>();
+            personRepo.Setup(d => d.GetPerson(It.IsAny<int>())).Returns(mockPerson);
 
             var collection = new ServiceCollection();
-            collection.AddScoped((sp) => { return dependancy.Object; });
+            collection.AddScoped((sp) => { return personRepo.Object; });
+            collection.AddScoped((sp) => { return yearProvider.Object; });
 
             var provider = new Services.ServiceProvider(collection.BuildServiceProvider());
 
@@ -80,7 +86,7 @@ namespace di_demo.Tests
             submitButton.FireEvent("Click", null);
 
 
-            dependancy.Verify(x => x.GetPerson(It.Is<int>((val) => val == 5)), Times.Once());
+            personRepo.Verify(x => x.GetPerson(It.Is<int>((val) => val == 5)), Times.Once());
 
 
             var employeeData = page.FindControlRecursive<HtmlGenericControl>("employeeData");
@@ -105,5 +111,40 @@ namespace di_demo.Tests
 
 
         }
+
+        [TestMethod]
+        public void DefaultPage_VerifyFooterContent()
+        {
+
+            var personRepo = new Mock<IPersonRepository>();
+            var yearProvider = new Mock<IYearProvider>();
+
+            yearProvider.Setup(x => x.CurrentYear).Returns(2000);
+
+            var collection = new ServiceCollection();
+            collection.AddScoped((sp) => { return personRepo.Object; });
+            collection.AddScoped((sp) => { return yearProvider.Object; });
+
+            var provider = new Services.ServiceProvider(collection.BuildServiceProvider());
+
+
+            WebApplicationProxy.Create(typeof(_Default), provider);
+
+            var page = WebApplicationProxy.GetPageByLocation<_Default>("/default.aspx", collection);
+
+            page.RunToEvent(WebFormEvent.PreRender);
+
+            var pageHtml = page.RenderHtml();
+
+            var parser = new HtmlParser();
+            var document = parser.Parse(pageHtml);
+            var footerDiv = document.QuerySelectorAll("div[class=footer]");
+
+            Assert.IsTrue(footerDiv.Length == 1, "Expected exactly one footer div");
+            Assert.IsTrue(footerDiv[0].TextContent == "© 2000", "Value of label was incorrect");
+
+        }
+
+
     }
 }

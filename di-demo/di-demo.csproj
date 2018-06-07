@@ -216,6 +216,7 @@
     <Compile Include="Data\IPersonRepository.cs" />
     <Compile Include="Data\Entity\Person.cs" />
     <Compile Include="Services\ServiceProvider.cs" />
+    <Compile Include="Services\YearProvider.cs" />
     <Compile Include="Site.Master.cs">
       <DependentUpon>Site.Master</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
